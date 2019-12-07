@@ -7,10 +7,17 @@
 #define TRUE 1;
 #define FALSE 0;
 
+int running = false;
+int score = 0;
+int time = 0;
+char *board = malloc(ROWS*COLS);
+
 typedef struct {
     int **data;
     int width, row, col;
 } tetromino;
+
+tetromino current;
 
 const tetromino shapes[6] = {
     {(int *[])
@@ -84,6 +91,16 @@ void RotateMino(tetromino tetro){
     DeleteMino(temp);
 }
 
+tetromino NewRandomTetro(){
+    tetromino temp = CopyMino(shapes[rand(%6)]);
+
+    temp.col = rand()%(COLS-temp.width+1);
+    temp.row = 0;
+
+    DeleteMino(current);
+
+    return temp;
+}
 
 typedef struct {
     //Game variables
@@ -101,3 +118,30 @@ typedef struct {
     int *board;
 } game;
 
+int main(){
+    tetromino temp = CopyMino(shapes[0]);
+
+    printf("%d %d %d", temp.width, temp.row, temp.col);
+
+    printf("space");
+    for(int i = 0; i < temp.width; i++){
+        printf("\n");
+        for(int j = 0; j < temp.width; j++){
+
+            printf("%d", temp.data[i][j]);
+        }
+    }
+
+    RotateMino(temp);
+    RotateMino(temp);
+
+    printf("space");
+    for(int i = 0; i < temp.width; i++){
+        printf("\n");
+        for(int j = 0; j < temp.width; j++){
+
+            printf("%d", temp.data[i][j]);
+        }
+    }
+    return 0;
+}
