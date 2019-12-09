@@ -1,4 +1,5 @@
 #include <stdlib.h>
+//#include <stdio.h>
 #include <stdint.h>
 #include <pic32mx.h>
 
@@ -18,9 +19,6 @@
 
 
 /********************************* GAME ***********************************************/
-#define ROWS 20
-#define COLS 10
-
 #define TRUE 1
 #define FALSE 0 
 
@@ -28,47 +26,51 @@ void *stderr, *stdin, *stdout;
 
 int running = false;
 int score = 0;
-int tme = 0;
-uint8_t board[512];
+int ticksToGravity[5] = {20, 15, 10, 5, 3}; 
+int linesremaining = 20;
+int level = 1; //take -1 when calculating ticksToGravity.
+int board[128];
+
 
 typedef struct {
-    uint8_t data[4][4];
+    uint8_t** data;
     int width, row, col;
     
 } tetromino;
 
 tetromino current;
 
+
 const tetromino shapes[6] = {
-    {   {{0xf,0xf,0xf,0xf}
-        ,{0xff,0xff,0xff,0xff}
-        ,{0xf0,0xf0,0xf0,0xf0}
-        ,{0,0,0,0}}, 4},
+    {(uint8_t *[])
+        {(uint8_t []){0,0,0}
+        ,(uint8_t []){0,0xf,0xf}
+        ,(uint8_t []){0xf,0xf,0}}, 3},
 
-    {   {{0xf0,0xf0,0xf0,0xf0}
-        ,{0xff,0xff,0xff,0xff}
-        ,{0xf,0xf,0xf,0xf}
-        ,{0,0,0,0}}, 4},   
+    {(uint8_t *[])
+        {(uint8_t []){0,0,0}
+        ,(uint8_t []){0xf,0xf,0}
+        ,(uint8_t []){0,0xf,0xf}}, 3},   
 
-    {   {{0xf0,0xf0,0xf0,0xf0}
-        ,{0xff,0xff,0xff,0xff}
-        ,{0xf0,0xf0,0xf0,0xf0}
-        ,{0,0,0,0}}, 4},  
+    {(uint8_t *[])
+        {(uint8_t []){0,0,0}
+        ,(uint8_t []){0,0,0xf}
+        ,(uint8_t []){0xf,0xf,0xf}}, 3},  
 
-    {   {{0xf0,0xf0,0xf0,0xf0}
-        ,{0xf0,0xf0,0xf0,0xf0}
-        ,{0xff,0xff,0xff,0xff}
-        ,{0,0,0,0}}, 4},            
+    {(uint8_t *[]) 
+        {(uint8_t []){0,0,0}
+        ,(uint8_t []){0,0xf,0}
+        ,(uint8_t []){0xf,0xf,0xf}}, 3},            
 
-    {   {{0xff,0xff,0xff,0xff}
-        ,{0xff,0xff,0xff,0xff}
-        ,{0,0,0,0}
-        ,{0,0,0,0}}, 4}, 
+    {(uint8_t *[])
+        {(uint8_t []){0xf,0xf}
+        ,(uint8_t []){0xf,0xf}}, 2}, 
 
-    {   {{0xf,0xf,0xf,0xf}
-        ,{0xf,0xf,0xf,0xf}
-        ,{0xf,0xf,0xf,0xf}
-        ,{0xf,0xf,0xf,0xf}}, 4}
+    {(uint8_t *[])
+        {(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0xf,0xf,0xf,0xf}
+        ,(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0,0,0}}, 4}
 };
 
 tetromino CopyMino(tetromino tetro){
@@ -82,10 +84,10 @@ tetromino CopyMino(tetromino tetro){
         }
     } */
 
-    //temp.data = (char**)malloc(temp.width*sizeof(char*));
+    //temp.data = (uint8_t**)malloc(temp.width*sizeof(uint8_t*));
     int i, j;
     for(i = 0; i < tetro.width; i++){
-        //temp.data[i] = (char*)malloc(temp.width*sizeof(char));
+        //temp.data[i] = (uint8_t*)malloc(temp.width*sizeof(uint8_t));
         for(j = 0; j < tetro.width; j++){
             temp.data[i][j] = tetro.data[i][j];
         }
@@ -94,6 +96,11 @@ tetromino CopyMino(tetromino tetro){
 }
 
 void DeleteMino(tetromino tetro){
+    int i;
+    for(i = 0; i < tetro.width; i++){
+        free(tetro.data[i]);
+    }
+    free(tetro.data);
 }
 
 void RotateMino(tetromino* tetro){
@@ -111,11 +118,11 @@ void RotateMino(tetromino* tetro){
 }
 
 tetromino NewRandomTetro(){
-    int r2 = rand2(0,10000);
+    int r2 = rand();
     tetromino temp = CopyMino(shapes[r2%6]);
 
-    int r1 = rand2(0, 10000);
-    temp.col = r1%(COLS-temp.width+1);
+    int r1 = rand();
+    temp.col = r1%(temp.width+1);
     temp.row = 0;
 
     DeleteMino(current);
@@ -138,27 +145,6 @@ tetromino NewRandomTetro(){
 
     int *board;
 } game; */
-
-/* Implementation of stdlib.h rand() function*/
-int rand2(int start_range,int end_range){
-    static int rand = 0xACE1U; /* Any nonzero start state will work. */
-
-    /*check for valid range.*/
-    if(start_range == end_range) {
-        return start_range;
-    }
-
-    /*get the random in end-range.*/
-    rand += 0x3AD;
-    rand %= end_range;
-
-    /*get the random in start-range.*/
-    while(rand < start_range){
-        rand = rand + end_range - start_range;
-    }
-
-    return rand;
-  }
 
 void user_isr(){
 
@@ -275,16 +261,39 @@ void OledClear()
 
 void OledClearBuffer(){
 	int i;
-    uint8_t* pb;
+    int* pb;
 
 	pb = board;
 
 	/* Fill the memory buffer with 0.
 	*/
-	for (i = 0; i < 512; i++) {
-		pb[i] = 0x00;
+	for (i = 0; i < 128; i++) {
+		pb[i] = 0;
 	}
 
+}
+
+void writeToBoard(tetromino temp){
+    int i,j,k;
+    for(i = 0; i < temp.width; i++){
+        for(j = 0; j < temp.width; j++){
+            int tbpush = (int) temp.data[i][j] & 0xff;
+            tbpush = tbpush << (temp.row + 4*i);
+
+            for(k = 0; k < temp.width; k++){
+                board[temp.col + k] |= tbpush;
+            }
+        }
+    }
+}
+
+void deleteFromBoard(tetromino* tetro){
+    int i,j;
+    for(i = 0; i < tetro->width; i++){
+        for(j = 0; j < tetro->width; j++){
+            board[(tetro->col + j) + (tetro->row + i)] = 0;
+        }
+    }
 }
 
 void updateOLED(void){
@@ -292,8 +301,7 @@ void updateOLED(void){
     uint8_t* updateBuffer;
 
     updateBuffer = board;
-
-    for (i = 0; i < 4; i++) {
+    for(i = 0; i < 4; i++){
         DISPLAY_CHANGE_TO_COMMAND_MODE;
         spi_send_byte(0x22);
         spi_send_byte(i);
@@ -305,7 +313,7 @@ void updateOLED(void){
         /* Copy this memory page of display data.
         */
        for (j = 0; j < 128; j++){
-           uint8_t u = updateBuffer[j + 128*i];
+           uint8_t u = updateBuffer[j];
            spi_send_byte(u);
        }
         //spi_send_large(128, updateBuffer);
@@ -318,95 +326,17 @@ void updateOLED(void){
 int main(){
     
     OledInit();
-    tetromino seed = CopyMino(shapes[0]);
-    int data = seed.data[0][1];
-    data = data << 10;
-    data = data * 32;
-    srand();
-    int rands = rand();
-    tetromino temp = CopyMino(shapes[rands&6]);
-    int i,j;
-
-    int count = -1;
-     for(i = 0; i < temp.width; i++){
-        for(j = 0; j < temp.width; j++){
-            count++;
-            board[count] = temp.data[i][j] & 0xFF;
+    tetromino temp = CopyMino(shapes[0]);
+    temp.row = 2;
+    temp.col = 10;
+    board[11] = 0xff;
+    /* for(int i = 0; i < temp.width; i++){
+        printf("\n");
+        for(int j = 0; j < temp.width; j++){
+            printf("%d", temp.data[i][j]);
         }
     }
-
-   
-/*  board[0] = 0xff;
-    board[1] = 0xff;
-   board[2] = 0xff;
-   board[3] = 0xff;
-
-     board[4] = 0xff;
-    board[5] = 0xff;
-   board[6] = 0xff;
-   board[7] = 0xff;
-
-   board[8] = 0xf0;
-    board[9] = 0xf0;
-   board[10] = 0xf0;
-   board[11] = 0xf0;  
- */
-
-
-
+    printf("%0x", board[11]); */
     updateOLED();
-/*     tetromino temp = CopyMino(shapes[0]);
-
-    printf("%d %d %d", temp.width, temp.row, temp.col);
-
-    printf("\n");
-    printf("space");
-    printf("\n");
-    for(int i = 0; i < temp.width; i++){
-        printf("\n");
-        for(int j = 0; j < temp.width; j++){
-
-            printf("%d", temp.data[i][j]);
-        }
-    }
-
-    RotateMino(&temp);
-
-    printf("\n\n");
-    printf("space");
-    printf("\n");
-    for(int i = 0; i < temp.width; i++){
-        printf("\n");
-        for(int j = 0; j < temp.width; j++){
-
-            printf("%d", temp.data[i][j]);
-        }
-    }
- 
-    RotateMino(&temp);
-
-    printf("\n");
-    printf("space");
-    printf("\n");
-    for(int i = 0; i < temp.width; i++){
-        printf("\n");
-        for(int j = 0; j < temp.width; j++){
-
-            printf("%d", temp.data[i][j]);
-        }
-    } 
-
-    RotateMino(&temp);
-
-    printf("\n\n");
-    printf("space");
-    printf("\n");
-    for(int i = 0; i < temp.width; i++){
-        printf("\n");
-        for(int j = 0; j < temp.width; j++){
-
-            printf("%d", temp.data[i][j]);
-        }
-    } */
     return 0;
 }
