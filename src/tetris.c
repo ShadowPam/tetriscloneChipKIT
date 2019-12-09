@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <pic32mx.h>
@@ -19,19 +18,21 @@
 
 
 /********************************* GAME ***********************************************/
+#define ROWS 20
+#define COLS 10
 
-#define ROWS 21
-#define COLS 11
 #define TRUE 1
 #define FALSE 0 
+
+void *stderr, *stdin, *stdout;
 
 int running = false;
 int score = 0;
 int tme = 0;
-char board[ROWS*COLS];
+uint8_t board[512];
 
 typedef struct {
-    char data[4][4];
+    uint8_t data[4][4];
     int width, row, col;
     
 } tetromino;
@@ -39,35 +40,35 @@ typedef struct {
 tetromino current;
 
 const tetromino shapes[6] = {
-    {   {(char []){0,0,0,0}
-        ,(char []){0,0,1,1}
-        ,(char []){0,1,1,0}
-        ,(char []){0,0,0,0}}, 4},
+    {   {{0xf,0xf,0xf,0xf}
+        ,{0xff,0xff,0xff,0xff}
+        ,{0xf0,0xf0,0xf0,0xf0}
+        ,{0,0,0,0}}, 4},
 
-    {   {(char []){0,0,0,0}
-        ,(char []){0,1,1,0}
-        ,(char []){0,0,1,1}
-        ,(char []){0,0,0,0}}, 4},   
+    {   {{0xf0,0xf0,0xf0,0xf0}
+        ,{0xff,0xff,0xff,0xff}
+        ,{0xf,0xf,0xf,0xf}
+        ,{0,0,0,0}}, 4},   
 
-    {   {(char []){0,0,0,0}
-        ,(char []){0,0,1,0}
-        ,(char []){0,1,1,1}
-        ,(char []){0,0,0,0}}, 4},  
+    {   {{0xf0,0xf0,0xf0,0xf0}
+        ,{0xff,0xff,0xff,0xff}
+        ,{0xf0,0xf0,0xf0,0xf0}
+        ,{0,0,0,0}}, 4},  
 
-    {   {(char []){0,0,0,0}
-        ,(char []){0,0,0,1}
-        ,(char []){0,1,1,1}
-        ,(char []){0,0,0,0}}, 4},            
+    {   {{0xf0,0xf0,0xf0,0xf0}
+        ,{0xf0,0xf0,0xf0,0xf0}
+        ,{0xff,0xff,0xff,0xff}
+        ,{0,0,0,0}}, 4},            
 
-    {   {(char []){0,0,0,0}
-        ,(char []){0,1,1,0}
-        ,(char []){0,1,1,0}
-        ,(char []){0,0,0,0}}, 4}, 
+    {   {{0xff,0xff,0xff,0xff}
+        ,{0xff,0xff,0xff,0xff}
+        ,{0,0,0,0}
+        ,{0,0,0,0}}, 4}, 
 
-    {  {(char  []){0,0,0,0}
-        ,(char []){1,1,1,1}
-        ,(char []){0,0,0,0}
-        ,(char []){0,0,0,0}}, 4}
+    {   {{0xf,0xf,0xf,0xf}
+        ,{0xf,0xf,0xf,0xf}
+        ,{0xf,0xf,0xf,0xf}
+        ,{0xf,0xf,0xf,0xf}}, 4}
 };
 
 tetromino CopyMino(tetromino tetro){
@@ -93,7 +94,6 @@ tetromino CopyMino(tetromino tetro){
 }
 
 void DeleteMino(tetromino tetro){
-    
 }
 
 void RotateMino(tetromino* tetro){
@@ -111,17 +111,19 @@ void RotateMino(tetromino* tetro){
 }
 
 tetromino NewRandomTetro(){
-    tetromino temp = CopyMino(shapes[rand()%6]);
+    int r2 = rand2(0,10000);
+    tetromino temp = CopyMino(shapes[r2%6]);
 
-    temp.col = rand()%(COLS-temp.width+1);
+    int r1 = rand2(0, 10000);
+    temp.col = r1%(COLS-temp.width+1);
     temp.row = 0;
 
-    //DeleteMino(current);
+    DeleteMino(current);
 
     return temp;
 }
 
-typedef struct {
+/* typedef struct {
     //Game variables
     int row;
     int col;
@@ -135,15 +137,51 @@ typedef struct {
 
 
     int *board;
-} game;
+} game; */
 
-/* Taken from Lab 3 main function*/
-void spiSetup(){
-    /*
-	  This will set the peripheral bus clock to the same frequency
-	  as the sysclock. That means 80 MHz, when the microcontroller
-	  is running at 80 MHz. Changed 2017, as recommended by Axel.
+/* Implementation of stdlib.h rand() function*/
+int rand2(int start_range,int end_range){
+    static int rand = 0xACE1U; /* Any nonzero start state will work. */
+
+    /*check for valid range.*/
+    if(start_range == end_range) {
+        return start_range;
+    }
+
+    /*get the random in end-range.*/
+    rand += 0x3AD;
+    rand %= end_range;
+
+    /*get the random in start-range.*/
+    while(rand < start_range){
+        rand = rand + end_range - start_range;
+    }
+
+    return rand;
+  }
+
+void user_isr(){
+
+}
+
+void OledInit(){
+
+	/* Init the PIC32 peripherals used to talk to the display.
 	*/
+	OledHostInit();
+
+	/* Init the OLED display hardware.
+	*/
+	display_init();
+
+	/* Clear the display.
+	*/
+	OledClear();
+
+}
+
+void OledHostInit(){
+
 	SYSKEY = 0xAA996655;  /* Unlock OSCCON, step 1 */
 	SYSKEY = 0x556699AA;  /* Unlock OSCCON, step 2 */
 	while(OSCCON & (1 << 21)); /* Wait until PBDIV ready */
@@ -171,17 +209,17 @@ void spiSetup(){
 	
 	/* Set up SPI as master */
 	SPI2CON = 0;
-	SPI2BRG = 4;
+	SPI2BRG = 15;
 	/* SPI2STAT bit SPIROV = 0; */
 	SPI2STATCLR = 0x40;
 	/* SPI2CON bit CKP = 1; */
-        SPI2CONSET = 0x40;
+    SPI2CONSET = 0x40;
 	/* SPI2CON bit MSTEN = 1; */
 	SPI2CONSET = 0x20;
 	/* SPI2CON bit ON = 1; */
 	SPI2CONSET = 0x8000;
+	
 }
-
 uint8_t spi_send_byte(uint8_t data){
     while(!(SPI2STAT & 0x08));
 	SPI2BUF = data;
@@ -192,13 +230,11 @@ uint8_t spi_send_byte(uint8_t data){
 void quicksleep(int cv){
     int i;
     for(i = 0; i < cv; i++){
-
     }
-
 }
 
 /* Display initialisation from Refrence sheet and lab 3 function*/
-void display_init(){
+void display_init(void){
     DISPLAY_CHANGE_TO_COMMAND_MODE;
 	quicksleep(10);
 	DISPLAY_ACTIVATE_VDD;
@@ -229,50 +265,96 @@ void display_init(){
 }
 
 
+void OledClear()
+	{
 
-void spi_send_large(int size, char* data){
-    int i;
-    for(i = 0; i < size; i++){
-        while(!(SPI2STAT & 0x08));
-        SPI2BUF = *data++;
-        while(!(SPI2STAT & 1));
-    }
+	OledClearBuffer();
+	updateOLED();
+
 }
 
-void updateOLED(){
-    int i;
-    char* updateBuffer;
+void OledClearBuffer(){
+	int i;
+    uint8_t* pb;
+
+	pb = board;
+
+	/* Fill the memory buffer with 0.
+	*/
+	for (i = 0; i < 512; i++) {
+		pb[i] = 0x00;
+	}
+
+}
+
+void updateOLED(void){
+    int i, j;
+    uint8_t* updateBuffer;
+
     updateBuffer = board;
+
     for (i = 0; i < 4; i++) {
         DISPLAY_CHANGE_TO_COMMAND_MODE;
         spi_send_byte(0x22);
         spi_send_byte(i);
 
-        spi_send_byte(0x00);
         spi_send_byte(0x10);
 
-        DISPLAY_CHANGE_TO_COMMAND_MODE;
-        
+		DISPLAY_CHANGE_TO_DATA_MODE;
+
         /* Copy this memory page of display data.
         */
-        spi_send_large(4, updateBuffer);
-        updateBuffer += 4;
+       for (j = 0; j < 128; j++){
+           uint8_t u = updateBuffer[j + 128*i];
+           spi_send_byte(u);
+       }
+        //spi_send_large(128, updateBuffer);
+        //updateBuffer += 128;
     }
 }
 
 
 
 int main(){
+    
+    OledInit();
+    tetromino seed = CopyMino(shapes[0]);
+    int data = seed.data[0][1];
+    data = data << 10;
+    data = data * 32;
+    srand();
+    int rands = rand();
+    tetromino temp = CopyMino(shapes[rands&6]);
+    int i,j;
 
-    spiSetup();
-    display_init();
+    int count = -1;
+     for(i = 0; i < temp.width; i++){
+        for(j = 0; j < temp.width; j++){
+            count++;
+            board[count] = temp.data[i][j] & 0xFF;
+        }
+    }
+
+   
+/*  board[0] = 0xff;
+    board[1] = 0xff;
+   board[2] = 0xff;
+   board[3] = 0xff;
+
+     board[4] = 0xff;
+    board[5] = 0xff;
+   board[6] = 0xff;
+   board[7] = 0xff;
+
+   board[8] = 0xf0;
+    board[9] = 0xf0;
+   board[10] = 0xf0;
+   board[11] = 0xf0;  
+ */
+
+
 
     updateOLED();
-
-    int i;
-    for(i = 0; i < (ROWS*COLS); i++){
-        board[i] = 1;
-    }
 /*     tetromino temp = CopyMino(shapes[0]);
 
     printf("%d %d %d", temp.width, temp.row, temp.col);
@@ -326,8 +408,5 @@ int main(){
             printf("%d", temp.data[i][j]);
         }
     } */
-    while(1){
-        updateOLED();
-    }
     return 0;
 }
