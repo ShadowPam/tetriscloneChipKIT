@@ -33,7 +33,7 @@ int board[128];
 
 
 typedef struct {
-    uint8_t** data;
+    uint8_t data[4][4];
     int width, row, col;
     
 } tetromino;
@@ -42,32 +42,32 @@ tetromino current;
 
 
 const tetromino shapes[6] = {
-    {(uint8_t *[])
-        {(uint8_t []){0,0,0}
-        ,(uint8_t []){0,0xf,0xf}
-        ,(uint8_t []){0xf,0xf,0}}, 3},
+    {   {(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0xf,0xf,0}
+        ,(uint8_t []){0xf,0xf,0,0}}, 4},
 
-    {(uint8_t *[])
-        {(uint8_t []){0,0,0}
-        ,(uint8_t []){0xf,0xf,0}
-        ,(uint8_t []){0,0xf,0xf}}, 3},   
+    {   {(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0xf,0xf,0,0}
+        ,(uint8_t []){0,0xf,0xf,0}}, 4},   
 
-    {(uint8_t *[])
-        {(uint8_t []){0,0,0}
-        ,(uint8_t []){0,0,0xf}
-        ,(uint8_t []){0xf,0xf,0xf}}, 3},  
+    {   {(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0,0xf,0}
+        ,(uint8_t []){0xf,0xf,0xf,0}}, 4},  
 
-    {(uint8_t *[]) 
-        {(uint8_t []){0,0,0}
-        ,(uint8_t []){0,0xf,0}
-        ,(uint8_t []){0xf,0xf,0xf}}, 3},            
+    {   {(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0xf,0,0}
+        ,(uint8_t []){0xf,0xf,0xf,0}}, 4},            
 
-    {(uint8_t *[])
-        {(uint8_t []){0xf,0xf}
-        ,(uint8_t []){0xf,0xf}}, 2}, 
+    {   {(uint8_t []){0,0,0,0}
+        ,(uint8_t []){0,0xf,0xf,0}
+        ,(uint8_t []){0,0xf,0xf,0}
+        ,(uint8_t []){0,0,0,0}}, 4}, 
 
-    {(uint8_t *[])
-        {(uint8_t []){0,0,0,0}
+    {   {(uint8_t []){0,0,0,0}
         ,(uint8_t []){0xf,0xf,0xf,0xf}
         ,(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0,0,0}}, 4}
@@ -96,11 +96,11 @@ tetromino CopyMino(tetromino tetro){
 }
 
 void DeleteMino(tetromino tetro){
-    int i;
+    /* int i;
     for(i = 0; i < tetro.width; i++){
         free(tetro.data[i]);
     }
-    free(tetro.data);
+    free(tetro.data); */
 }
 
 void RotateMino(tetromino* tetro){
@@ -277,28 +277,29 @@ void writeToBoard(tetromino temp){
     int i,j,k;
     for(i = 0; i < temp.width; i++){
         for(j = 0; j < temp.width; j++){
-            int tbpush = (int) temp.data[i][j] & 0xff;
-            tbpush = tbpush << (temp.row + 4*i);
-
             for(k = 0; k < temp.width; k++){
-                board[temp.col + k] |= tbpush;
+                if(temp.data[i][j]){
+                    board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i);
+                }
             }
         }
     }
 }
 
-void deleteFromBoard(tetromino* tetro){
-    int i,j;
-    for(i = 0; i < tetro->width; i++){
-        for(j = 0; j < tetro->width; j++){
-            board[(tetro->col + j) + (tetro->row + i)] = 0;
+void deleteFromBoard(tetromino tetro){
+    int i,j,k;
+    for(i = 0; i < tetro.width; i++){
+        for(j = 0; j < tetro.width; j++){
+            for(k = 0; k < tetro.width; k++){
+                board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i);
+            }
         }
     }
 }
 
 void updateOLED(void){
     int i, j;
-    uint8_t* updateBuffer;
+    int* updateBuffer;
 
     updateBuffer = board;
     for(i = 0; i < 4; i++){
@@ -312,12 +313,10 @@ void updateOLED(void){
 
         /* Copy this memory page of display data.
         */
-       for (j = 0; j < 128; j++){
-           uint8_t u = updateBuffer[j];
-           spi_send_byte(u);
-       }
-        //spi_send_large(128, updateBuffer);
-        //updateBuffer += 128;
+        for (j = 0; j < 128; j++){
+            uint8_t u = updateBuffer[j] >> 8*i;
+            spi_send_byte(u);
+        }
     }
 }
 
@@ -326,17 +325,21 @@ void updateOLED(void){
 int main(){
     
     OledInit();
-    tetromino temp = CopyMino(shapes[0]);
+    tetromino temp = CopyMino(shapes[5]);
     temp.row = 2;
-    temp.col = 10;
-    board[11] = 0xff;
-    /* for(int i = 0; i < temp.width; i++){
-        printf("\n");
-        for(int j = 0; j < temp.width; j++){
-            printf("%d", temp.data[i][j]);
-        }
+    temp.col = 0;
+
+
+    /* SEPARAT ARRAY MED BOARD UTAN CURRENT*/
+
+    while(1){
+        deleteFromBoard(temp);
+        updateOLED();
+        temp.col++;
+        writeToBoard(temp);
+        updateOLED();
+        quicksleep(1000000);
     }
-    printf("%0x", board[11]); */
-    updateOLED();
+
     return 0;
 }
