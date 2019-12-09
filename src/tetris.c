@@ -1,5 +1,4 @@
 #include <stdlib.h>
-//#include <stdio.h>
 #include <stdint.h>
 #include <pic32mx.h>
 
@@ -78,16 +77,9 @@ tetromino CopyMino(tetromino tetro){
     temp.width = tetro.width;
     temp.col = tetro.col;
     temp.row = tetro.row;
-/*     for(int k = 0; k < tetro.width; k++){
-        for(int l = 0; l < tetro.width; l++){
-            copyData[k][l] = tetro.data[k][l];
-        }
-    } */
 
-    //temp.data = (uint8_t**)malloc(temp.width*sizeof(uint8_t*));
     int i, j;
     for(i = 0; i < tetro.width; i++){
-        //temp.data[i] = (uint8_t*)malloc(temp.width*sizeof(uint8_t));
         for(j = 0; j < tetro.width; j++){
             temp.data[i][j] = tetro.data[i][j];
         }
@@ -96,11 +88,6 @@ tetromino CopyMino(tetromino tetro){
 }
 
 void DeleteMino(tetromino tetro){
-    /* int i;
-    for(i = 0; i < tetro.width; i++){
-        free(tetro.data[i]);
-    }
-    free(tetro.data); */
 }
 
 void RotateMino(tetromino* tetro){
@@ -129,22 +116,6 @@ tetromino NewRandomTetro(){
 
     return temp;
 }
-
-/* typedef struct {
-    //Game variables
-    int row;
-    int col;
-    int score;
-    int running;
-    int time;
-
-    //Current and next block
-    tetromino current;
-    tetromino next;
-
-
-    int *board;
-} game; */
 
 void user_isr(){
 
