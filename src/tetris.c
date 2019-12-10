@@ -165,7 +165,6 @@ int checkMino(tetromino tetro){
     return TRUE;
 }
 
-
 void user_isr(){
 
 }
@@ -375,7 +374,7 @@ int gameLoop(){
 void gameEnd(){
     //Print finishing text, i.e. score and level
     //TODO
-
+  
     //Ask for restart input
     // restart main();
 }
@@ -386,7 +385,7 @@ int main(){
         running = gameLoop();
     }
     gameEnd();
-    
+
     //ARRAY UTAN CURRENT I
     return 0;
 }
