@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include <time.h>
 #include <pic32mx.h>
-#include "tetris.h"
 
 
 /********************************* FROM LABS ***********************************************/
@@ -169,6 +167,7 @@ int seed;
 int linesremaining;
 int level; //take -1 when calculating ticksToGravity.
 int board[128];
+int staticBoard[128];
 
 
 typedef struct {
@@ -255,9 +254,6 @@ tetromino NewRandomTetro(){
 
     temp.col = 0;
     temp.row = (rand()%9)*4 - temp.width;
-
-    DeleteMino(&current);
-
     return temp;
 }
 
@@ -267,6 +263,7 @@ int checkLines(){
         if(board[i] == 0xffffffff){
             for(j = i; j < (i+4); j++){
                 board[j] = 0x00;
+                staticBoard[j] = 0x00;
             }
 
             int temp[128] = {0};
@@ -285,21 +282,23 @@ int checkLines(){
 
 int checkMino(tetromino tetro){
     int i, j;
+    int state = TRUE;
     for(i = 0; i < tetro.width; i++) {
         for(j = 0; j < tetro.width ;j++){
             uint8_t elem = board[tetro.col+(4*j)] >> 4*i+tetro.row;
             elem = elem & 0x0f;
-            if((tetro.col+(4*j) < 0 || tetro.col+(4*j) >= 128 || tetro.row+i >= 32)){
+
+            if((tetro.col+(4*j) >= 128 || tetro.row < 0 || tetro.row+tetro.width+i+4 >= 31)){
+
                 if(tetro.data[i][j]){
-                    return FALSE;
+                    state = FALSE;
                 }
-            }
-            else if(elem && tetro.data[i][j]){
-                return FALSE;
+            }else if(elem && tetro.data[i][j]){
+                state = FALSE;
             }
         }
     }
-    return TRUE;
+    return state;
 }
 
 void nextLevel(){
@@ -374,6 +373,45 @@ void quicksleep(int cv){
     }
 }
 
+/*
+ * itoa
+ * Taken from lab 3
+ */
+#define ITOA_BUFSIZ ( 24 )
+char * itoaconv( int num )
+{
+  register int i, sign;
+  static char itoa_buffer[ ITOA_BUFSIZ ];
+  static const char maxneg[] = "-2147483648";
+  
+  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;   /* Insert the end-of-string marker. */
+  sign = num;                           /* Save sign. */
+  if( num < 0 && num - 1 > 0 )          /* Check for most negative integer */
+  {
+    for( i = 0; i < sizeof( maxneg ); i += 1 )
+    itoa_buffer[ i + 1 ] = maxneg[ i ];
+    i = 0;
+  }
+  else
+  {
+    if( num < 0 ) num = -num;           /* Make number positive. */
+    i = ITOA_BUFSIZ - 2;                /* Location for first ASCII digit. */
+    do {
+      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit. */
+      num = num / 10;                   /* Remove digit from number. */
+      i -= 1;                           /* Move index to next empty position. */
+    } while( num > 0 );
+    if( sign < 0 )
+    {
+      itoa_buffer[ i ] = '-';
+      i -= 1;
+    }
+  }
+  /* Since the loop always sets the index i to the next empty position,
+   * we must add 1 in order to return a pointer to the first occupied position. */
+  return( &itoa_buffer[ i + 1 ] );
+}
+
 /* Display initialisation from Refrence sheet and lab 3 function*/
 void display_init(void){
     DISPLAY_CHANGE_TO_COMMAND_MODE;
@@ -439,9 +477,30 @@ void writeToBoard(tetromino temp){
     int i,j,k;
     for(i = 0; i < temp.width; i++){
         for(j = 0; j < temp.width; j++){
+            if(temp.data[i][j] == 0){
+                continue;
+            }
             for(k = 0; k < temp.width; k++){
                 if(temp.data[i][j]){
+                    int cell = (int)temp.data[i][j]; 
                     board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
+                }
+            }
+        }
+    }
+}
+
+void writeToStaticBoard(tetromino temp){
+    int i,j,k;
+    for(i = 0; i < temp.width; i++){
+        for(j = 0; j < temp.width; j++){
+            if(temp.data[i][j] == 0){
+                continue;
+            }
+            for(k = 0; k < temp.width; k++){
+                if(temp.data[i][j]){
+                    int cell = (int)temp.data[i][j]; 
+                    staticBoard[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
                 }
             }
         }
@@ -452,10 +511,10 @@ void deleteFromBoard(tetromino tetro){
     int i,j,k;
     for(i = 0; i < tetro.width; i++){
         for(j = 0; j < tetro.width; j++){
+            if(tetro.data[i][j] == 0){
+                continue;
+            }
             for(k = 0; k < tetro.width; k++){
-                if(tetro.data[i][j] == 0){
-                    continue;
-                }
                 board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i)+tetro.row;
             }
         }
@@ -486,12 +545,7 @@ void updateOLED(void){
     }
 }
 
-
-/*
-* The functions display_string and display_update are taken from labs, and have been modified to fit our project.
-*/
-
-
+/* Taken from lab 3*/
 void text_update(int line, char *s) {
 	int i;
 	if(line < 0 || line >= 4)
@@ -507,7 +561,7 @@ void text_update(int line, char *s) {
 			textbuffer[line][i] = ' ';
 }
 
-
+/* Taken from lab 3*/
 void display_text(void) {
 	int i, j, k;
 	int c;
@@ -531,7 +585,6 @@ void display_text(void) {
 		}
 	}
 }
-
 
 void timerInit(){
     T2CON = 0x70;
@@ -563,25 +616,28 @@ void gameInit(){
     linesremaining = 20;
     ticks = ticksToGravity[level-1];
 
-
-    //Print start text
-    //TODO
+    text_update(0,"Tetris!");
+    text_update(1, "To start game:");
+    display_text();
+    quicksleep(100000);
+    text_update(3,"Press BTN2");
+    display_text();
 
     //Wait for input
     while(1){
-        //displaytext
-
-        int btn1 = PORTF & 0x1;
-        if(btn1){
+        seed += 1;
+        if(PORTD >>5 & 0x1){
+            OledClear();
+            text_update(2, "Good luck and have fun!");
+            display_text();
+            quicksleep(10000000);
             OledClear();
             return;
         }
     }
 }
 
-
-// CHECK LINES AT GRAVITY TICK ALSO CREATE NEW SHAPE HERE
-
+/* Gameloop for the game */
 int gameLoop(){
     int state = TRUE;
 
@@ -593,17 +649,21 @@ int gameLoop(){
         ticks--;
 
         deleteFromBoard(current);
+        int i;
+        for(i = 0; i < 128; i++){
+            board[i] = staticBoard[i];
+        }
 
         if(btnStart){
-            int btn4 = (t>>2) & 0x1;
-            int btn3 = (t>>1) & 0x1;
-            int btn2 = t & 0x1;
+            int btn4 = (btnStart>>2) & 0x1;
+            int btn3 = (btnStart>>1) & 0x1;
+            int btn2 = btnStart & 0x1;
 
             if(btn4){
                 tetromino temp = CopyMino(current);
-                RotateMino(temp);
+                RotateMino(&temp);
                 if(checkMino(temp)){
-                    RotateMino(current);
+                    RotateMino(&current);
                 }
             }
 
@@ -627,7 +687,11 @@ int gameLoop(){
             if(sw){
                 int *temp = board;
                 OledClear();
-                //displaytext
+                text_update(0, "Current level, score and lines remaining until next level(in respective order):");
+                text_update(1, itoaconv(level));
+                text_update(2, itoaconv(score));
+                text_update(3, itoaconv(linesremaining));
+                display_text();
                 while(1){
                     int close = getsw();
                     if(!close){
@@ -648,7 +712,8 @@ int gameLoop(){
 
             /* Hit bottom*/
             if(!checkMino(temp)){
-                writeToBoard(temp);
+                writeToStaticBoard(current);
+                writeToBoard(current);
 
                 if(checkLines()){
                     score += 1000;
@@ -677,19 +742,39 @@ int gameLoop(){
 }
 
 void gameEnd(){
-    //Print finishing text, i.e. score and level
-    //TODO
+    text_update(0, "GAME OVER, too bad :(");
+    text_update(2, "Press BTN1 to try again");
+    display_text();
 
-    //Ask for restart input
-    // restart main();
+    while(1){
+        int btn = PORTF & 0x1;
+        if(btn){
+            break;
+        }
+    }
+    main();
+}
+
+void gameWin(){
+    text_update(0, "YOU'RE THE BEST, WELL DONE!");
+    text_update(1, "You defeated level 6");
+    text_update(3, "To play again press BTN1");
+    while(1){
+        int btn = PORTF & 0x1;
+        if(btn){
+            break;
+        }
+    }
+    main();
 }
 
 int main(){
-    gameInit();
     seed = 0;
+    gameInit();
+    seed = seed*seed;
     srand(seed);
     current = NewRandomTetro();
-    writeToBoard();
+    writeToBoard(current);
     updateOLED();
     while(running){
         running = gameLoop();
@@ -700,6 +785,5 @@ int main(){
         gameEnd();
     }
 
-    //ARRAY UTAN CURRENT I
     return 0;
 }
