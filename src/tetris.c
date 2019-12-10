@@ -167,6 +167,10 @@ int checkMino(tetromino tetro){
     return TRUE;
 }
 
+void nextLevel(){
+    level += 1;
+}
+
 void OledInit(){
 
 	/* Init the PIC32 peripherals used to talk to the display.
@@ -314,6 +318,9 @@ void deleteFromBoard(tetromino tetro){
     for(i = 0; i < tetro.width; i++){
         for(j = 0; j < tetro.width; j++){
             for(k = 0; k < tetro.width; k++){
+                if(tetro.data[i][j] == 0){
+                    continue;
+                }
                 board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i)+tetro.row;
             }
         }
@@ -388,8 +395,6 @@ void gameInit(){
             return;
         }
     }
-    //When input received break
-
 }
 
 
@@ -475,8 +480,9 @@ int gameLoop(){
                         }
                     }
                 }
-
                 current = NewRandomTetro();
+            }else{
+                current.col += 4;
             }
             ticks = ticksToGravity[level-1];
         }
