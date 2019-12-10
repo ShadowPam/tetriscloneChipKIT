@@ -1,5 +1,4 @@
 #include <stdlib.h>
-//#include <stdio.h>
 #include <stdint.h>
 #include <pic32mx.h>
 
@@ -382,32 +381,12 @@ void gameEnd(){
 }
 
 int main(){
-    /* gameInit();
+    gameInit();
     while(running){
         running = gameLoop();
     }
-    gameEnd(); */
+    gameEnd();
     
-    OledInit();
-    tetromino test = CopyMino(shapes[3]);
-    test.col = 24;
-    test.row = 4;
-
-    tetromino test2 = CopyMino(shapes[3]);
-    test2.col = 4;
-    test2.row = -4;
-
-    writeToBoard(test);
-    writeToBoard(test2);
-    updateOLED();
-    quicksleep(100000);
-
-    test2.col += 24;
-
-    if(checkMino(test2)){
-        deleteFromBoard(test);
-    }
-    updateOLED();
     //ARRAY UTAN CURRENT I
     return 0;
 }
