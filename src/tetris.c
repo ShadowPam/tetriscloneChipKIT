@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <pic32mx.h>
+#include "tetris.h"
 
 
 /********************************* FROM LABS ***********************************************/
@@ -165,11 +166,6 @@ int checkMino(tetromino tetro){
     return TRUE;
 }
 
-
-void user_isr(){
-
-}
-
 void OledInit(){
 
 	/* Init the PIC32 peripherals used to talk to the display.
@@ -278,10 +274,6 @@ void OledClear()
 
 }
 
-void timerInit(){
-    
-}
-
 void OledClearBuffer(){
 	int i;
     int* pb;
@@ -344,13 +336,23 @@ void updateOLED(void){
     }
 }
 
+void timerInit(){
+    T2CON = 0x60;
+    PR2 = 6250; 
+    IECSET(0) = 1<<8;
+    IPCSET(2) = 0x7<<2;
+    TMR2 = 0;
+    T2CONSET = 1<<15;
+    enable_interrupt();
+}
+
 /* Initialize game and startscreen, wait for starting input*/
 void gameInit(){
     //Initialize screen
     OledInit();
 
     //Initialize timer
-
+    timerInit();
 
     //Intialize parameters
     running = TRUE;
@@ -369,7 +371,16 @@ void gameInit(){
 }
 
 int gameLoop(){
+    if((IFS(0)>>8) & 1){
+        IFSCLR(0) = 1<<8;
 
+
+
+
+
+    }
+
+    return TRUE;
 }
 
 void gameEnd(){
