@@ -1,4 +1,5 @@
 #include <stdlib.h>
+//#include <stdio.h>
 #include <stdint.h>
 #include <pic32mx.h>
 
@@ -23,11 +24,12 @@
 
 void *stderr, *stdin, *stdout;
 
-int running = false;
-int score = 0;
+int running;
+int score;
+int time;
 int ticksToGravity[5] = {20, 15, 10, 5, 3}; 
-int linesremaining = 20;
-int level = 1; //take -1 when calculating ticksToGravity.
+int linesremaining;
+int level; //take -1 when calculating ticksToGravity.
 int board[128];
 
 
@@ -87,7 +89,13 @@ tetromino CopyMino(tetromino tetro){
     return temp;
 }
 
-void DeleteMino(tetromino tetro){
+void DeleteMino(tetromino* tetro){
+    int i, j;
+    for(i = 0; i < tetro->width; i++){
+        for(j = 0; j < tetro->width; j++){
+            tetro->data[i][j] = 0x00;
+        }
+    }
 }
 
 void RotateMino(tetromino* tetro){
@@ -101,7 +109,7 @@ void RotateMino(tetromino* tetro){
         }
     }
 
-    DeleteMino(temp);
+    DeleteMino(&temp);
 }
 
 tetromino NewRandomTetro(){
@@ -112,9 +120,35 @@ tetromino NewRandomTetro(){
     temp.col = r1%(temp.width+1);
     temp.row = 0;
 
-    DeleteMino(current);
+    DeleteMino(&current);
 
     return temp;
+}
+
+int checkLines(){
+    int i, j, k, l;
+    for(i = 0; i < 128; i = i + 4){
+        if(board[i] == 0xffffffff){
+            for(j = i; j < (i+4); j++){
+                board[j] = 0x00;
+            }
+
+            int temp[128] = {0};
+            for(l = 0; l < i; l++){
+                temp[l+4] = board[l];
+            }
+
+            for(k = 0; k < i+4; k++){
+                board[k] = temp[k];
+            } 
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+int checkPosition(tetromino tetro){
+
 }
 
 void user_isr(){
@@ -138,7 +172,6 @@ void OledInit(){
 }
 
 void OledHostInit(){
-
 	SYSKEY = 0xAA996655;  /* Unlock OSCCON, step 1 */
 	SYSKEY = 0x556699AA;  /* Unlock OSCCON, step 2 */
 	while(OSCCON & (1 << 21)); /* Wait until PBDIV ready */
@@ -230,6 +263,10 @@ void OledClear()
 
 }
 
+void timerInit(){
+    
+}
+
 void OledClearBuffer(){
 	int i;
     int* pb;
@@ -275,6 +312,7 @@ void updateOLED(void){
     updateBuffer = board;
     for(i = 0; i < 4; i++){
         DISPLAY_CHANGE_TO_COMMAND_MODE;
+
         spi_send_byte(0x22);
         spi_send_byte(i);
 
@@ -291,26 +329,70 @@ void updateOLED(void){
     }
 }
 
+/* Initialize game and startscreen, wait for starting input*/
+void gameInit(){
+    //Initialize screen
+    OledInit();
 
+    //Initialize timer
+
+
+    //Intialize parameters
+    running = TRUE;
+    score = 0;
+    time = 0;
+    level = 1;
+    linesremaining = 20;
+    
+
+    //Print start text
+    //TODO
+
+    //Wait for input 
+    //When input received break
+
+}
+
+int gameLoop(){
+
+}
+
+void gameEnd(){
+    //Print finishing text, i.e. score and level
+    //TODO
+
+    //Ask for restart input
+    // restart main();
+}
 
 int main(){
-    
-    OledInit();
-    tetromino temp = CopyMino(shapes[5]);
-    temp.row = 2;
-    temp.col = 0;
-
-
-    /* SEPARAT ARRAY MED BOARD UTAN CURRENT*/
-
-    while(1){
-        deleteFromBoard(temp);
-        updateOLED();
-        temp.col++;
-        writeToBoard(temp);
-        updateOLED();
-        quicksleep(1000000);
+    /* gameInit();
+    while(running){
+        running = gameLoop();
     }
+    gameEnd(); */
+    OledInit();
+    int i;
+    for(i = 4; i < 8; i++){
+        board[i] = 0xffffffff;
+    }
+    board[2] = 0xffff0000;
+    updateOLED();
+    quicksleep(10000000);
 
+    //int* test = board;
+/*     for(i = 0; i < 127; i++){
+        if(i = 0){
+            board[i+1] = board[i];
+            continue;
+        }
+        board[i+1] = temp;
+        temp = board[i+1];
+
+    } */
+    
+    checkLines();
+
+    updateOLED();
     return 0;
 }
