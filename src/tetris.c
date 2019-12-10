@@ -1,5 +1,4 @@
 #include <stdlib.h>
-//#include <stdio.h>
 #include <stdint.h>
 #include <pic32mx.h>
 
@@ -366,33 +365,11 @@ void gameEnd(){
 }
 
 int main(){
-    /* gameInit();
+    gameInit();
     while(running){
         running = gameLoop();
     }
-    gameEnd(); */
-    OledInit();
-    int i;
-    for(i = 4; i < 8; i++){
-        board[i] = 0xffffffff;
-    }
-    board[2] = 0xffff0000;
-    updateOLED();
-    quicksleep(10000000);
-
-    //int* test = board;
-/*     for(i = 0; i < 127; i++){
-        if(i = 0){
-            board[i+1] = board[i];
-            continue;
-        }
-        board[i+1] = temp;
-        temp = board[i+1];
-
-    } */
-    
-    checkLines();
-
-    updateOLED();
+    gameEnd();
+    //ARRAY UTAN CURRENT I
     return 0;
 }
