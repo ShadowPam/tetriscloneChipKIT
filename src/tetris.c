@@ -146,8 +146,23 @@ int checkLines(){
     return FALSE;
 }
 
-int checkPosition(tetromino tetro){
-
+int checkMino(tetromino tetro){
+    int i, j;
+    for(i = 0; i < tetro.width; i++) {
+        for(j = 0; j < tetro.width ;j++){
+            uint8_t elem = board[tetro.col+(4*j)] >> 4*i+tetro.row;
+            elem = elem & 0x0f;
+            if((tetro.col+(4*j) < 0 || tetro.col+(4*j) >= 128 || tetro.row+i >= 32)){ 
+                if(tetro.data[i][j]){
+                    return FALSE;
+                }
+            }
+            else if(elem && tetro.data[i][j]){
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
 }
 
 void user_isr(){
@@ -286,7 +301,7 @@ void writeToBoard(tetromino temp){
         for(j = 0; j < temp.width; j++){
             for(k = 0; k < temp.width; k++){
                 if(temp.data[i][j]){
-                    board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i);
+                    board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
                 }
             }
         }
@@ -298,7 +313,7 @@ void deleteFromBoard(tetromino tetro){
     for(i = 0; i < tetro.width; i++){
         for(j = 0; j < tetro.width; j++){
             for(k = 0; k < tetro.width; k++){
-                board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i);
+                board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i)+tetro.row;
             }
         }
     }
@@ -359,7 +374,7 @@ int gameLoop(){
 void gameEnd(){
     //Print finishing text, i.e. score and level
     //TODO
-
+  
     //Ask for restart input
     // restart main();
 }
@@ -370,6 +385,7 @@ int main(){
         running = gameLoop();
     }
     gameEnd();
+
     //ARRAY UTAN CURRENT I
     return 0;
 }
