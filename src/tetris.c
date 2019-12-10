@@ -1,4 +1,5 @@
 #include <stdlib.h>
+//#include <stdio.h>
 #include <stdint.h>
 #include <pic32mx.h>
 
@@ -146,9 +147,25 @@ int checkLines(){
     return FALSE;
 }
 
-int checkPosition(tetromino tetro){
-
+int checkMino(tetromino tetro){
+    int i, j;
+    for(i = 0; i < tetro.width; i++) {
+        for(j = 0; j < tetro.width ;j++){
+            uint8_t elem = board[tetro.col+(4*j)] >> 4*i+tetro.row;
+            elem = elem & 0x0f;
+            if((tetro.col+(4*j) < 0 || tetro.col+(4*j) >= 128 || tetro.row+i >= 32)){ 
+                if(tetro.data[i][j]){
+                    return FALSE;
+                }
+            }
+            else if(elem && tetro.data[i][j]){
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
 }
+
 
 void user_isr(){
 
@@ -286,7 +303,7 @@ void writeToBoard(tetromino temp){
         for(j = 0; j < temp.width; j++){
             for(k = 0; k < temp.width; k++){
                 if(temp.data[i][j]){
-                    board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i);
+                    board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
                 }
             }
         }
@@ -298,7 +315,7 @@ void deleteFromBoard(tetromino tetro){
     for(i = 0; i < tetro.width; i++){
         for(j = 0; j < tetro.width; j++){
             for(k = 0; k < tetro.width; k++){
-                board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i);
+                board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i)+tetro.row;
             }
         }
     }
@@ -365,11 +382,32 @@ void gameEnd(){
 }
 
 int main(){
-    gameInit();
+    /* gameInit();
     while(running){
         running = gameLoop();
     }
-    gameEnd();
+    gameEnd(); */
+    
+    OledInit();
+    tetromino test = CopyMino(shapes[3]);
+    test.col = 24;
+    test.row = 4;
+
+    tetromino test2 = CopyMino(shapes[3]);
+    test2.col = 4;
+    test2.row = -4;
+
+    writeToBoard(test);
+    writeToBoard(test2);
+    updateOLED();
+    quicksleep(100000);
+
+    test2.col += 24;
+
+    if(checkMino(test2)){
+        deleteFromBoard(test);
+    }
+    updateOLED();
     //ARRAY UTAN CURRENT I
     return 0;
 }
