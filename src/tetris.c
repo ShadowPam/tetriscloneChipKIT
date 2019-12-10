@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <time.h>
 #include <pic32mx.h>
 #include "tetris.h"
 
@@ -25,9 +26,11 @@
 void *stderr, *stdin, *stdout;
 
 int running;
+int won;
 int score;
-int time;
 int ticksToGravity[5] = {20, 15, 10, 5, 3}; 
+int ticks;
+int seed;
 int linesremaining;
 int level; //take -1 when calculating ticksToGravity.
 int board[128];
@@ -113,12 +116,10 @@ void RotateMino(tetromino* tetro){
 }
 
 tetromino NewRandomTetro(){
-    int r2 = rand();
-    tetromino temp = CopyMino(shapes[r2%6]);
+    tetromino temp = CopyMino(shapes[rand()%6]);
 
-    int r1 = rand();
-    temp.col = r1%(temp.width+1);
-    temp.row = 0;
+    temp.col = 0;
+    temp.row = (rand()%9)*4 - temp.width;
 
     DeleteMino(&current);
 
@@ -266,12 +267,9 @@ void display_init(void){
 }
 
 
-void OledClear()
-	{
-
+void OledClear(){
 	OledClearBuffer();
 	updateOLED();
-
 }
 
 void OledClearBuffer(){
@@ -286,6 +284,16 @@ void OledClearBuffer(){
 		pb[i] = 0;
 	}
 
+}
+
+int getbtns(){
+    int result = (PORTD >> 5) & 0x7;
+    return result;
+}
+
+int getsw(){
+    unsigned int result = ((PORTD >> 11) & 0x1);
+    return result;
 }
 
 void writeToBoard(tetromino temp){
@@ -337,13 +345,12 @@ void updateOLED(void){
 }
 
 void timerInit(){
-    T2CON = 0x60;
-    PR2 = 6250; 
+    T2CON = 0x70;
+    PR2 = 15625; 
     IECSET(0) = 1<<8;
     IPCSET(2) = 0x7<<2;
     TMR2 = 0;
     T2CONSET = 1<<15;
-    enable_interrupt();
 }
 
 /* Initialize game and startscreen, wait for starting input*/
@@ -354,33 +361,131 @@ void gameInit(){
     //Initialize timer
     timerInit();
 
+    //Setup button and switch ports
+    TRISD |= 0x8e0;
+    TRISF |= 0x1;
+
+
     //Intialize parameters
     running = TRUE;
     score = 0;
-    time = 0;
+    won = FALSE;
     level = 1;
     linesremaining = 20;
+    ticks = ticksToGravity[level-1];
     
 
     //Print start text
     //TODO
 
     //Wait for input 
+    while(1){
+        //displaytext
+
+        int btn1 = PORTF & 0x1;
+        if(btn1){
+            OledClear();
+            return;
+        }
+    }
     //When input received break
 
 }
 
+
+// CHECK LINES AT GRAVITY TICK ALSO CREATE NEW SHAPE HERE
+
 int gameLoop(){
+    int state = TRUE;
+
     if((IFS(0)>>8) & 1){
+
         IFSCLR(0) = 1<<8;
+        int btnStart = getbtns();
+        int sw = getsw();
+        ticks--;
 
+        deleteFromBoard(current);
 
+        if(btnStart){
+            int btn4 = (t>>2) & 0x1;
+            int btn3 = (t>>1) & 0x1;
+            int btn2 = t & 0x1;
 
+            if(btn4){
+                tetromino temp = CopyMino(current);
+                RotateMino(temp);
+                if(checkMino(temp)){
+                    RotateMino(current);
+                }
+            }
 
+            if(btn3){
+                tetromino temp = CopyMino(current);
+                temp.row += 4;
+                if(checkMino(temp)){
+                    current.row += 4;
+                }
+            }
 
+            if(btn2){
+                tetromino temp = CopyMino(current);
+                temp.row -= 4;
+                if(checkMino(temp)){
+                    current.row -= 4;
+                }
+            }
+
+        }else{
+            if(sw){
+                int *temp = board;
+                OledClear();
+                //displaytext
+                while(1){
+                    int close = getsw();
+                    if(!close){
+                        OledClear();
+                        break;
+                    }
+                }
+                int i;
+                for(i = 0; i < 128; i++){
+                    board[i] = temp[i];
+                }
+            }
+        }
+
+        if(ticks == 0){
+            tetromino temp = CopyMino(current);
+            temp.col += 4;
+
+            /* Hit bottom*/
+            if(!checkMino(temp)){
+                writeToBoard(temp);
+
+                if(checkLines()){
+                    score += 1000;
+                    linesremaining--;
+
+                    if(linesremaining == 0){
+                        nextLevel();
+                        if(level == 6){
+                            won = TRUE;
+                            state = FALSE;
+                        }
+                    }
+                }
+
+                current = NewRandomTetro();
+            }
+            ticks = ticksToGravity[level-1];
+        }
+
+        writeToBoard(current);
+        updateOLED();  
     }
 
-    return TRUE;
+    return state;
 }
 
 void gameEnd(){
@@ -393,10 +498,19 @@ void gameEnd(){
 
 int main(){
     gameInit();
+    seed = 0;
+    srand(seed);
+    current = NewRandomTetro();
+    writeToBoard();
+    updateOLED();
     while(running){
         running = gameLoop();
     }
-    gameEnd();
+    if(won){
+        gameWin();
+    }else{
+        gameEnd();
+    }
 
     //ARRAY UTAN CURRENT I
     return 0;
