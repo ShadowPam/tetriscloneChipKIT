@@ -17,25 +17,163 @@
 #define DISPLAY_TURN_OFF_VBAT (PORTFSET = 0x20)
 
 
+const uint8_t const font[] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 94, 0, 0, 0, 0,
+	0, 0, 4, 3, 4, 3, 0, 0,
+	0, 36, 126, 36, 36, 126, 36, 0,
+	0, 36, 74, 255, 82, 36, 0, 0,
+	0, 70, 38, 16, 8, 100, 98, 0,
+	0, 52, 74, 74, 52, 32, 80, 0,
+	0, 0, 0, 4, 3, 0, 0, 0,
+	0, 0, 0, 126, 129, 0, 0, 0,
+	0, 0, 0, 129, 126, 0, 0, 0,
+	0, 42, 28, 62, 28, 42, 0, 0,
+	0, 8, 8, 62, 8, 8, 0, 0,
+	0, 0, 0, 128, 96, 0, 0, 0,
+	0, 8, 8, 8, 8, 8, 0, 0,
+	0, 0, 0, 0, 96, 0, 0, 0,
+	0, 64, 32, 16, 8, 4, 2, 0,
+	0, 62, 65, 73, 65, 62, 0, 0,
+	0, 0, 66, 127, 64, 0, 0, 0,
+	0, 0, 98, 81, 73, 70, 0, 0,
+	0, 0, 34, 73, 73, 54, 0, 0,
+	0, 0, 14, 8, 127, 8, 0, 0,
+	0, 0, 35, 69, 69, 57, 0, 0,
+	0, 0, 62, 73, 73, 50, 0, 0,
+	0, 0, 1, 97, 25, 7, 0, 0,
+	0, 0, 54, 73, 73, 54, 0, 0,
+	0, 0, 6, 9, 9, 126, 0, 0,
+	0, 0, 0, 102, 0, 0, 0, 0,
+	0, 0, 128, 102, 0, 0, 0, 0,
+	0, 0, 8, 20, 34, 65, 0, 0,
+	0, 0, 20, 20, 20, 20, 0, 0,
+	0, 0, 65, 34, 20, 8, 0, 0,
+	0, 2, 1, 81, 9, 6, 0, 0,
+	0, 28, 34, 89, 89, 82, 12, 0,
+	0, 0, 126, 9, 9, 126, 0, 0,
+	0, 0, 127, 73, 73, 54, 0, 0,
+	0, 0, 62, 65, 65, 34, 0, 0,
+	0, 0, 127, 65, 65, 62, 0, 0,
+	0, 0, 127, 73, 73, 65, 0, 0,
+	0, 0, 127, 9, 9, 1, 0, 0,
+	0, 0, 62, 65, 81, 50, 0, 0,
+	0, 0, 127, 8, 8, 127, 0, 0,
+	0, 0, 65, 127, 65, 0, 0, 0,
+	0, 0, 32, 64, 64, 63, 0, 0,
+	0, 0, 127, 8, 20, 99, 0, 0,
+	0, 0, 127, 64, 64, 64, 0, 0,
+	0, 127, 2, 4, 2, 127, 0, 0,
+	0, 127, 6, 8, 48, 127, 0, 0,
+	0, 0, 62, 65, 65, 62, 0, 0,
+	0, 0, 127, 9, 9, 6, 0, 0,
+	0, 0, 62, 65, 97, 126, 64, 0,
+	0, 0, 127, 9, 9, 118, 0, 0,
+	0, 0, 38, 73, 73, 50, 0, 0,
+	0, 1, 1, 127, 1, 1, 0, 0,
+	0, 0, 63, 64, 64, 63, 0, 0,
+	0, 31, 32, 64, 32, 31, 0, 0,
+	0, 63, 64, 48, 64, 63, 0, 0,
+	0, 0, 119, 8, 8, 119, 0, 0,
+	0, 3, 4, 120, 4, 3, 0, 0,
+	0, 0, 113, 73, 73, 71, 0, 0,
+	0, 0, 127, 65, 65, 0, 0, 0,
+	0, 2, 4, 8, 16, 32, 64, 0,
+	0, 0, 0, 65, 65, 127, 0, 0,
+	0, 4, 2, 1, 2, 4, 0, 0,
+	0, 64, 64, 64, 64, 64, 64, 0,
+	0, 0, 1, 2, 4, 0, 0, 0,
+	0, 0, 48, 72, 40, 120, 0, 0,
+	0, 0, 127, 72, 72, 48, 0, 0,
+	0, 0, 48, 72, 72, 0, 0, 0,
+	0, 0, 48, 72, 72, 127, 0, 0,
+	0, 0, 48, 88, 88, 16, 0, 0,
+	0, 0, 126, 9, 1, 2, 0, 0,
+	0, 0, 80, 152, 152, 112, 0, 0,
+	0, 0, 127, 8, 8, 112, 0, 0,
+	0, 0, 0, 122, 0, 0, 0, 0,
+	0, 0, 64, 128, 128, 122, 0, 0,
+	0, 0, 127, 16, 40, 72, 0, 0,
+	0, 0, 0, 127, 0, 0, 0, 0,
+	0, 120, 8, 16, 8, 112, 0, 0,
+	0, 0, 120, 8, 8, 112, 0, 0,
+	0, 0, 48, 72, 72, 48, 0, 0,
+	0, 0, 248, 40, 40, 16, 0, 0,
+	0, 0, 16, 40, 40, 248, 0, 0,
+	0, 0, 112, 8, 8, 16, 0, 0,
+	0, 0, 72, 84, 84, 36, 0, 0,
+	0, 0, 8, 60, 72, 32, 0, 0,
+	0, 0, 56, 64, 32, 120, 0, 0,
+	0, 0, 56, 64, 56, 0, 0, 0,
+	0, 56, 64, 32, 64, 56, 0, 0,
+	0, 0, 72, 48, 48, 72, 0, 0,
+	0, 0, 24, 160, 160, 120, 0, 0,
+	0, 0, 100, 84, 84, 76, 0, 0,
+	0, 0, 8, 28, 34, 65, 0, 0,
+	0, 0, 0, 126, 0, 0, 0, 0,
+	0, 0, 65, 34, 28, 8, 0, 0,
+	0, 0, 4, 2, 4, 2, 0, 0,
+	0, 120, 68, 66, 68, 120, 0, 0,
+};
+
+
+char textbuffer[4][16];
+
+
 /********************************* GAME ***********************************************/
 #define TRUE 1
-#define FALSE 0 
+#define FALSE 0
 
 void *stderr, *stdin, *stdout;
 
 int running;
+int won;
 int score;
-int time;
-int ticksToGravity[5] = {20, 15, 10, 5, 3}; 
+int ticksToGravity[5] = {3, 7, 6, 5, 4};
+int ticks;
+int seed;
 int linesremaining;
 int level; //take -1 when calculating ticksToGravity.
 int board[128];
+int staticBoard[128];
 
 
 typedef struct {
     uint8_t data[4][4];
     int width, row, col;
-    
+
 } tetromino;
 
 tetromino current;
@@ -50,22 +188,22 @@ const tetromino shapes[6] = {
     {   {(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0,0,0}
         ,(uint8_t []){0xf,0xf,0,0}
-        ,(uint8_t []){0,0xf,0xf,0}}, 4},   
+        ,(uint8_t []){0,0xf,0xf,0}}, 4},
 
     {   {(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0,0xf,0}
-        ,(uint8_t []){0xf,0xf,0xf,0}}, 4},  
+        ,(uint8_t []){0xf,0xf,0xf,0}}, 4},
 
     {   {(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0xf,0,0}
-        ,(uint8_t []){0xf,0xf,0xf,0}}, 4},            
+        ,(uint8_t []){0xf,0xf,0xf,0}}, 4},
 
     {   {(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0xf,0xf,0}
         ,(uint8_t []){0,0xf,0xf,0}
-        ,(uint8_t []){0,0,0,0}}, 4}, 
+        ,(uint8_t []){0,0,0,0}}, 4},
 
     {   {(uint8_t []){0,0,0,0}
         ,(uint8_t []){0xf,0xf,0xf,0xf}
@@ -112,15 +250,10 @@ void RotateMino(tetromino* tetro){
 }
 
 tetromino NewRandomTetro(){
-    int r2 = rand();
-    tetromino temp = CopyMino(shapes[r2%6]);
+    tetromino temp = CopyMino(shapes[rand()%6]);
 
-    int r1 = rand();
-    temp.col = r1%(temp.width+1);
-    temp.row = 0;
-
-    DeleteMino(&current);
-
+    temp.col = 0;
+    temp.row = ((rand()%7)*4)+4;
     return temp;
 }
 
@@ -130,16 +263,17 @@ int checkLines(){
         if(board[i] == 0xffffffff){
             for(j = i; j < (i+4); j++){
                 board[j] = 0x00;
+                staticBoard[j] = 0x00;
             }
 
             int temp[128] = {0};
             for(l = 0; l < i; l++){
-                temp[l+4] = board[l];
+                temp[l+4] = staticBoard[l];
             }
 
             for(k = 0; k < i+4; k++){
-                board[k] = temp[k];
-            } 
+                staticBoard[k] = temp[k];
+            }
             return TRUE;
         }
     }
@@ -148,25 +282,29 @@ int checkLines(){
 
 int checkMino(tetromino tetro){
     int i, j;
+    int state = TRUE;
     for(i = 0; i < tetro.width; i++) {
         for(j = 0; j < tetro.width ;j++){
-            uint8_t elem = board[tetro.col+(4*j)] >> 4*i+tetro.row;
-            elem = elem & 0x0f;
-            if((tetro.col+(4*j) < 0 || tetro.col+(4*j) >= 128 || tetro.row+i >= 32)){ 
-                if(tetro.data[i][j]){
-                    return FALSE;
-                }
+            if(tetro.data[i][j] == 0){
+                continue;
             }
-            else if(elem && tetro.data[i][j]){
-                return FALSE;
+            uint8_t elem = board[tetro.col+(4*j)] >> (4*i+tetro.row);
+            elem = elem & 0x0f;
+
+            if((tetro.col+(4*j) >= 128 || tetro.row < 0 || tetro.row+tetro.width+i+4 >= 31)){
+                if(tetro.data[i][j]){
+                    state = FALSE;
+                }
+            }else if(elem && tetro.data[i][j]){
+                state = FALSE;
             }
         }
     }
-    return TRUE;
+    return state;
 }
 
-void user_isr(){
-
+void nextLevel(){
+    level += 1;
 }
 
 void OledInit(){
@@ -192,13 +330,13 @@ void OledHostInit(){
 	OSCCONCLR = 0x180000; /* clear PBDIV bit <0,1> */
 	while(OSCCON & (1 << 21));  /* Wait until PBDIV ready */
 	SYSKEY = 0x0;  /* Lock OSCCON */
-	
+
 	/* Set up output pins */
 	AD1PCFG = 0xFFFF;
 	ODCE = 0x0;
 	TRISECLR = 0xFF;
 	PORTE = 0x0;
-	
+
 	/* Output pins for display signals */
 	PORTF = 0xFFFF;
 	PORTG = (1 << 9);
@@ -206,11 +344,11 @@ void OledHostInit(){
 	ODCG = 0x0;
 	TRISFCLR = 0x70;
 	TRISGCLR = 0x200;
-	
+
 	/* Set up input pins */
 	TRISDSET = (1 << 8);
 	TRISFSET = (1 << 1);
-	
+
 	/* Set up SPI as master */
 	SPI2CON = 0;
 	SPI2BRG = 15;
@@ -222,7 +360,7 @@ void OledHostInit(){
 	SPI2CONSET = 0x20;
 	/* SPI2CON bit ON = 1; */
 	SPI2CONSET = 0x8000;
-	
+
 }
 uint8_t spi_send_byte(uint8_t data){
     while(!(SPI2STAT & 0x08));
@@ -237,48 +375,81 @@ void quicksleep(int cv){
     }
 }
 
+/*
+ * itoa
+ * Taken from lab 3
+ */
+#define ITOA_BUFSIZ ( 24 )
+char * itoaconv( int num )
+{
+  register int i, sign;
+  static char itoa_buffer[ ITOA_BUFSIZ ];
+  static const char maxneg[] = "-2147483648";
+  
+  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;   /* Insert the end-of-string marker. */
+  sign = num;                           /* Save sign. */
+  if( num < 0 && num - 1 > 0 )          /* Check for most negative integer */
+  {
+    for( i = 0; i < sizeof( maxneg ); i += 1 )
+    itoa_buffer[ i + 1 ] = maxneg[ i ];
+    i = 0;
+  }
+  else
+  {
+    if( num < 0 ) num = -num;           /* Make number positive. */
+    i = ITOA_BUFSIZ - 2;                /* Location for first ASCII digit. */
+    do {
+      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit. */
+      num = num / 10;                   /* Remove digit from number. */
+      i -= 1;                           /* Move index to next empty position. */
+    } while( num > 0 );
+    if( sign < 0 )
+    {
+      itoa_buffer[ i ] = '-';
+      i -= 1;
+    }
+  }
+  /* Since the loop always sets the index i to the next empty position,
+   * we must add 1 in order to return a pointer to the first occupied position. */
+  return( &itoa_buffer[ i + 1 ] );
+}
+
 /* Display initialisation from Refrence sheet and lab 3 function*/
 void display_init(void){
     DISPLAY_CHANGE_TO_COMMAND_MODE;
 	quicksleep(10);
 	DISPLAY_ACTIVATE_VDD;
 	quicksleep(1000000);
-	
+
 	spi_send_byte(0xAE);
 	DISPLAY_ACTIVATE_RESET;
 	quicksleep(10);
 	DISPLAY_DO_NOT_RESET;
 	quicksleep(10);
-	
+
 	spi_send_byte(0x8D);
 	spi_send_byte(0x14);
-	
+
 	spi_send_byte(0xD9);
 	spi_send_byte(0xF1);
-	
+
 	DISPLAY_ACTIVATE_VBAT;
 	quicksleep(10000000);
-	
+
 	spi_send_byte(0xA1);
 	spi_send_byte(0xC8);
-	
+
 	spi_send_byte(0xDA);
 	spi_send_byte(0x20);
-	
+
 	spi_send_byte(0xAF);
 }
 
 
-void OledClear()
-	{
-
+void OledClear(){
 	OledClearBuffer();
+    clearText();
 	updateOLED();
-
-}
-
-void timerInit(){
-    
 }
 
 void OledClearBuffer(){
@@ -295,13 +466,53 @@ void OledClearBuffer(){
 
 }
 
+void clearText(){
+    int i, j;
+    for(i = 0; i < 4; i++){
+        for(j = 0; j < 16; j++){
+            textbuffer[i][j] = 0;
+        }
+    }
+}
+
+int getbtns(){
+    int result = (PORTD >> 5) & 0x7;
+    return result;
+}
+
+int getsw(){
+    unsigned int result = ((PORTD >> 11) & 0x1);
+    return result;
+}
+
 void writeToBoard(tetromino temp){
     int i,j,k;
     for(i = 0; i < temp.width; i++){
         for(j = 0; j < temp.width; j++){
+            if(temp.data[i][j] == 0){
+                continue;
+            }
             for(k = 0; k < temp.width; k++){
                 if(temp.data[i][j]){
+                    int cell = (int)temp.data[i][j]; 
                     board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
+                }
+            }
+        }
+    }
+}
+
+void writeToStaticBoard(tetromino temp){
+    int i,j,k;
+    for(i = 0; i < temp.width; i++){
+        for(j = 0; j < temp.width; j++){
+            if(temp.data[i][j] == 0){
+                continue;
+            }
+            for(k = 0; k < temp.width; k++){
+                if(temp.data[i][j]){
+                    int cell = (int)temp.data[i][j]; 
+                    staticBoard[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
                 }
             }
         }
@@ -312,6 +523,9 @@ void deleteFromBoard(tetromino tetro){
     int i,j,k;
     for(i = 0; i < tetro.width; i++){
         for(j = 0; j < tetro.width; j++){
+            if(tetro.data[i][j] == 0){
+                continue;
+            }
             for(k = 0; k < tetro.width; k++){
                 board[tetro.col + k + (4*j)] &=  (~0x0f) << (4*i)+tetro.row;
             }
@@ -343,49 +557,253 @@ void updateOLED(void){
     }
 }
 
+/* Taken from lab 3*/
+void text_update(int line, char *s) {
+	int i;
+	if(line < 0 || line >= 4)
+		return;
+	if(!s)
+		return;
+
+	for(i = 0; i < 16; i++)
+		if(*s) {
+			textbuffer[line][i] = *s;
+			s++;
+		} else
+			textbuffer[line][i] = ' ';
+}
+
+/* Taken from lab 3*/
+void display_text(void) {
+	int i, j, k;
+	int c;
+	for(i = 0; i < 4; i++) {
+		DISPLAY_CHANGE_TO_COMMAND_MODE;
+		spi_send_byte(0x22);
+		spi_send_byte(i);
+
+		spi_send_byte(0x0);
+		spi_send_byte(0x10);
+
+		DISPLAY_CHANGE_TO_DATA_MODE;
+
+		for(j = 0; j < 16; j++) {
+			c = textbuffer[i][j];
+			if(c & 0x80)
+				continue;
+
+			for(k = 0; k < 8; k++)
+				spi_send_byte(font[c*8 + k]);
+		}
+	}
+}
+
+void timerInit(){
+    T2CON = 0x70;
+    PR2 = 31250;
+    IECSET(0) = 1<<8;
+    IPCSET(2) = 0x7<<2;
+    TMR2 = 0;
+    T2CONSET = 1<<15;
+}
+
 /* Initialize game and startscreen, wait for starting input*/
 void gameInit(){
     //Initialize screen
     OledInit();
 
     //Initialize timer
+    timerInit();
+
+    //Setup button and switch ports
+    TRISD |= 0x8e0;
+    TRISF |= 0x1;
 
 
     //Intialize parameters
     running = TRUE;
     score = 0;
-    time = 0;
+    won = FALSE;
     level = 1;
-    linesremaining = 20;
-    
+    linesremaining = 5;
+    ticks = ticksToGravity[level-1];
 
-    //Print start text
-    //TODO
+    text_update(0,"Tetris!");
+    text_update(1, "To start game:");
+    display_text();
+    quicksleep(100000);
+    text_update(2,"Press BTN2");
+    display_text();
 
-    //Wait for input 
-    //When input received break
-
+    //Wait for input
+    while(1){
+        seed += 1;
+        if(PORTD >>5 & 0x1){
+            OledClear();
+            text_update(2, "Good luck");
+            text_update(3, "Have fun!");
+            display_text();
+            quicksleep(10000000);
+            OledClear();
+            return;
+        }
+    }
 }
 
+/* Gameloop for the game */
 int gameLoop(){
+    int state = TRUE;
 
+    if((IFS(0)>>8) & 1){
+
+        IFSCLR(0) = 1<<8;
+        int btnStart = getbtns();
+        int sw = getsw();
+        ticks--;
+
+        deleteFromBoard(current);
+        int i;
+        for(i = 0; i < 128; i++){
+            board[i] = staticBoard[i];
+        }
+
+        if(ticks == 0){
+            tetromino temp = CopyMino(current);
+            temp.col += 4;
+
+            /* Hit bottom*/
+            if(!checkMino(temp)){
+                writeToStaticBoard(current);
+                writeToBoard(current);
+
+                if(checkLines()){
+                    score += 1000;
+                    linesremaining--;
+
+                    if(linesremaining == 0){
+                        nextLevel();
+                        if(level == 6){
+                            won = TRUE;
+                            state = FALSE;
+                        }
+                    }
+                }
+                current = NewRandomTetro();
+            }else{
+                current.col += 4;
+            }
+            ticks = ticksToGravity[level-1];
+        }
+
+        if(btnStart){
+            int btn4 = (btnStart>>2) & 0x1;
+            int btn3 = (btnStart>>1) & 0x1;
+            int btn2 = btnStart & 0x1;
+
+            if(btn4){
+                tetromino temp = CopyMino(current);
+                RotateMino(&temp);
+                if(checkMino(temp)){
+                    RotateMino(&current);
+                }
+            }
+
+            if(btn3){
+                tetromino temp = CopyMino(current);
+                temp.row += 4;
+                if(checkMino(temp)){
+                    current.row += 4;
+                }
+            }
+
+            if(btn2){
+                tetromino temp = CopyMino(current);
+                temp.row -= 4;
+                if(checkMino(temp)){
+                    current.row -= 4;
+                }
+            }
+
+        }else{
+            if(sw){
+                int *temp = board;
+                OledClear();
+                text_update(0, "Level,score,lines");
+                text_update(1, itoaconv(level));
+                text_update(2, itoaconv(score));
+                text_update(3, itoaconv(linesremaining));
+                display_text();
+                while(1){
+                    int close = getsw();
+                    if(!close){
+                        OledClear();
+                        updateOLED();
+                        break;
+                    }
+                }
+                int i;
+                for(i = 0; i < 128; i++){
+                    board[i] = temp[i];
+                }
+            }
+        }
+
+        writeToBoard(current);
+        updateOLED();
+    }
+
+    return state;
 }
 
 void gameEnd(){
-    //Print finishing text, i.e. score and level
-    //TODO
-  
-    //Ask for restart input
-    // restart main();
+    text_update(0, "GAME OVER, too bad :(");
+    text_update(2, "Press BTN1 to try again");
+    display_text();
+
+    while(1){
+        int btn = PORTF & 0x1;
+        if(btn){
+            break;
+        }
+    }
+    main();
+}
+
+void gameWin(){
+    text_update(0, "YOU'RE THE BEST, WELL DONE!");
+    text_update(1, "You defeated level 6");
+    text_update(3, "To play again press BTN1");
+    while(1){
+        int btn = PORTF & 0x1;
+        if(btn){
+            break;
+        }
+    }
+    main();
 }
 
 int main(){
+    seed = 0;
     gameInit();
+    seed = seed*seed;
+    srand(seed);
+    current = NewRandomTetro();
+    writeToBoard(current);
+    updateOLED();
+
+    //Clear static board
+    int i;
+    for(i = 0; i < 128; i++){
+        staticBoard[i] = 0;
+    }
     while(running){
         running = gameLoop();
     }
-    gameEnd();
+    if(won){
+        gameWin();
+    }else{
+        gameEnd();
+    }
 
-    //ARRAY UTAN CURRENT I
     return 0;
 }
