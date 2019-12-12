@@ -161,7 +161,7 @@ void *stderr, *stdin, *stdout;
 int running;
 int won;
 int score;
-int ticksToGravity[5] = {10, 7, 6, 5, 4};
+int ticksToGravity[5] = {3, 7, 6, 5, 4};
 int ticks;
 int seed;
 int linesremaining;
