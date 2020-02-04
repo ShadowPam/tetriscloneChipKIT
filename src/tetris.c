@@ -476,6 +476,29 @@ void clearText(){
     }
 }
 
+void concatenate(char p[], char q[]) {
+   int c, d;
+   
+   c = 0;
+ 
+   while (p[c] != '\0') {
+      c++;      
+   }
+ 
+   p[c] = ' ';
+   c++;
+   d = 0;
+ 
+   while (q[d] != '\0') {
+      p[c] = q[d];
+      d++;
+      c++;    
+   }
+ 
+   p[c] = '\0';
+}
+
+
 int getbtns(){
     int result = (PORTD >> 5) & 0x7;
     return result;
@@ -849,6 +872,17 @@ int gameLoop(){
                 int *tempgame = board;
                 OledClear();
 
+                char name[4] = "AAA";
+                char pos[3] = "1";
+                char tempscore[4] = "13";
+
+                concatenate(pos, name);
+                concatenate(pos, tempscore);
+
+                text_update(0, pos);
+
+                display_text();
+
                 while(1){
                     int close = getsw();
                     if(!close){
@@ -858,11 +892,12 @@ int gameLoop(){
                     }
                 }
 
-
                 int loopgame;
                 for(loopgame = 0; loopgame < 128; loopgame++){
                     board[i] = tempgame[i];
-                }                
+                }  
+
+
             }
         }
 
