@@ -161,7 +161,7 @@ void *stderr, *stdin, *stdout;
 int running;
 int won;
 int score;
-int ticksToGravity[5] = {3, 7, 6, 5, 4};
+int ticksToGravity[5] = {2, 12, 9, 5, 4};
 int ticks;
 int seed;
 int linesremaining;
@@ -177,6 +177,7 @@ typedef struct {
 } tetromino;
 
 tetromino current;
+tetromino next;
 
 
 const tetromino shapes[6] = {
@@ -253,7 +254,7 @@ tetromino NewRandomTetro(){
     tetromino temp = CopyMino(shapes[rand()%6]);
 
     temp.col = 0;
-    temp.row = ((rand()%7)*4)+4;
+    temp.row = 8;
     return temp;
 }
 
@@ -481,7 +482,7 @@ int getbtns(){
 }
 
 int getsw(){
-    unsigned int result = ((PORTD >> 11) & 0x1);
+    unsigned int result = ((PORTD >> 9) & 0x7);
     return result;
 }
 
@@ -600,7 +601,7 @@ void display_text(void) {
 
 void timerInit(){
     T2CON = 0x70;
-    PR2 = 31250;
+    PR2 = 38250;
     IECSET(0) = 1<<8;
     IPCSET(2) = 0x7<<2;
     TMR2 = 0;
@@ -650,6 +651,12 @@ void gameInit(){
     }
 }
 
+int checkGameOver(){
+    int state = FALSE;
+    state = checkMino(current);
+    return state;
+}
+
 /* Gameloop for the game */
 int gameLoop(){
     int state = TRUE;
@@ -658,7 +665,7 @@ int gameLoop(){
 
         IFSCLR(0) = 1<<8;
         int btnStart = getbtns();
-        int sw = getsw();
+        int swStart = getsw();
         ticks--;
 
         deleteFromBoard(current);
@@ -688,9 +695,22 @@ int gameLoop(){
                         }
                     }
                 }
-                current = NewRandomTetro();
+                current = next;
+                next = NewRandomTetro();
+                state = checkGameOver();
             }else{
-                current.col += 4;
+                int currentcoltemp = current.col + 4;
+                while(1){
+                        current.col += 1;
+                        writeToBoard(current);
+                        updateOLED();
+                        deleteFromBoard(current);
+                        quicksleep(100000);
+                    
+                    if(current.col == currentcoltemp){
+                        break;
+                    }
+                }
             }
             ticks = ticksToGravity[level-1];
         }
@@ -724,8 +744,13 @@ int gameLoop(){
                 }
             }
 
-        }else{
-            if(sw){
+        }
+        if(swStart){
+            int sw1 = (swStart>>2) & 0x1; 
+            int sw2 = (swStart>>1) & 0x1;
+            int sw3 = swStart & 0x1;
+
+            if(sw1){
                 int *temp = board;
                 OledClear();
                 text_update(0, "Level,score,lines");
@@ -745,6 +770,99 @@ int gameLoop(){
                 for(i = 0; i < 128; i++){
                     board[i] = temp[i];
                 }
+            }
+
+            if(sw2){
+                int *tempgame = board;
+                OledClear();
+                text_update(0, "Next block:");
+                display_text();
+
+                int tempboard[128];
+                tetromino temp = CopyMino(next);
+                temp.col = 50;
+                temp.row = 14;
+
+                int q;
+                int* pb;
+
+                pb = tempboard;
+
+                /* Fill the memory buffer with 0.
+                */
+                for (q = 0; q < 128; q++) {
+                    pb[q] = 0;
+                }
+
+                int p,l,s;
+                for(p = 0; p < temp.width; p++){
+                    for(l = 0; l < temp.width; l++){
+                        if(temp.data[p][l] == 0){
+                            continue;
+                        }
+                        for(s = 0; s < temp.width; s++){
+                            if(temp.data[p][l]){
+                                tempboard[temp.col + s + (4*l)] |= temp.data[p][l] << (4*p+temp.row);
+                            }
+                        }
+                    }
+                }
+
+                int i, j;
+                int* updateBuffer;
+                updateBuffer = tempboard;
+
+                for(i = 2; i < 4; i++){
+                    DISPLAY_CHANGE_TO_COMMAND_MODE;
+
+                    spi_send_byte(0x22);
+                    spi_send_byte(i);
+
+                    spi_send_byte(0x10);
+
+                    DISPLAY_CHANGE_TO_DATA_MODE;
+
+                    /* Copy this memory page of display data.
+                    */
+                    for (j = 0; j < 128; j++){
+                        uint8_t u = updateBuffer[j] >> 8*i;
+                        spi_send_byte(u);
+                    }
+                }
+                while(1){
+                    int close = getsw();
+                    if(!close){
+                        OledClear();
+                        updateOLED();
+                        break;
+                    }
+                }
+
+
+                int loopgame;
+                for(loopgame = 0; loopgame < 128; loopgame++){
+                    board[i] = tempgame[i];
+                }
+            }
+
+            if(sw3){
+                int *tempgame = board;
+                OledClear();
+
+                while(1){
+                    int close = getsw();
+                    if(!close){
+                        OledClear();
+                        updateOLED();
+                        break;
+                    }
+                }
+
+
+                int loopgame;
+                for(loopgame = 0; loopgame < 128; loopgame++){
+                    board[i] = tempgame[i];
+                }                
             }
         }
 
@@ -788,6 +906,7 @@ int main(){
     seed = seed*seed;
     srand(seed);
     current = NewRandomTetro();
+    next = NewRandomTetro();
     writeToBoard(current);
     updateOLED();
 
