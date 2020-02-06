@@ -3,6 +3,7 @@
 #include <pic32mx.h>
 
 
+
 /********************************* FROM LABS ***********************************************/
 #define DISPLAY_CHANGE_TO_COMMAND_MODE (PORTFCLR = 0x10)
 #define DISPLAY_CHANGE_TO_DATA_MODE (PORTFSET = 0x10)
@@ -168,6 +169,15 @@ int linesremaining;
 int level; //take -1 when calculating ticksToGravity.
 int board[128];
 int staticBoard[128];
+char alphabet[27] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+
+typedef struct {
+    char name[4];
+    int score;
+} ScoreEntry;
+
+ScoreEntry highscores[10];
 
 
 typedef struct {
@@ -211,6 +221,13 @@ const tetromino shapes[6] = {
         ,(uint8_t []){0,0,0,0}
         ,(uint8_t []){0,0,0,0}}, 4}
 };
+
+inline int modulo(int a, int b) {
+    if(b < 0) return modulo(-a, -b);
+    const int result = a % b;
+    return result >= 0 ? result : result + b;
+}
+
 
 tetromino CopyMino(tetromino tetro){
     tetromino temp;
@@ -376,6 +393,21 @@ void quicksleep(int cv){
     }
 }
 
+int compareScores (const void * a, const void * b)
+{
+  if ( ((ScoreEntry*)a)->score <  ((ScoreEntry*)b)->score ) return 1;
+  if ( ((ScoreEntry*)a)->score == ((ScoreEntry*)b)->score ) return 0;
+  if ( ((ScoreEntry*)a)->score >  ((ScoreEntry*)b)->score ) return -1;
+}
+
+int min(int a, int b){
+    return a < b ? a : b;
+}
+
+int max(int a, int b){
+    return a > b ? a : b;
+}
+
 /*
  * itoa
  * Taken from lab 3
@@ -444,8 +476,8 @@ void display_init(void){
 	spi_send_byte(0x20);
 
 	spi_send_byte(0xAF);
-}
 
+}
 
 void OledClear(){
 	OledClearBuffer();
@@ -476,26 +508,27 @@ void clearText(){
     }
 }
 
-void concatenate(char p[], char q[]) {
+void concatenate(char p[], char q[], char out[]) {
    int c, d;
    
    c = 0;
  
    while (p[c] != '\0') {
+       out[c] = p[c];
       c++;      
    }
  
-   p[c] = ' ';
+   out[c] = ' ';
    c++;
    d = 0;
  
    while (q[d] != '\0') {
-      p[c] = q[d];
+      out[c] = q[d];
       d++;
       c++;    
    }
  
-   p[c] = '\0';
+   out[c] = '\0';
 }
 
 
@@ -622,6 +655,59 @@ void display_text(void) {
 	}
 }
 
+void printHighscore(){
+    int index = 0;
+    int i;
+
+    for(i = 0; i < 4; i++){
+            char temp[14];
+
+            concatenate(itoaconv(i+1), highscores[i].name, temp);
+            concatenate(temp, itoaconv(highscores[i].score), temp);
+
+            text_update(i, temp);
+    }
+
+    display_text();
+    while(1){
+        int btns = getbtns();
+        int btn4 = (btns>>2) & 0x1;
+        int btn3 = (btns>>1) & 0x1;
+
+        int close = getsw();
+        if(!close){
+            OledClear();
+            updateOLED();
+            break;
+        }
+
+        if(btns){
+            if(btn4){
+                index = min(index+1, 6);
+            }
+
+            if(btn3){
+                index = max(index-1, 0);
+            }
+
+            
+            for(i = 0; i < 4; i++){
+                char temp[14];
+
+                concatenate(itoaconv(i+index+1), highscores[i+index].name, temp);
+
+                concatenate(temp, itoaconv(highscores[i+index].score), temp);
+
+                text_update(i, temp);
+            }
+            display_text();
+        }
+
+        quicksleep(999999);
+    }
+
+}
+
 void timerInit(){
     T2CON = 0x70;
     PR2 = 38250;
@@ -632,7 +718,7 @@ void timerInit(){
 }
 
 /* Initialize game and startscreen, wait for starting input*/
-void gameInit(){
+void startup(){
     //Initialize screen
     OledInit();
 
@@ -643,10 +729,18 @@ void gameInit(){
     TRISD |= 0x8e0;
     TRISF |= 0x1;
 
+    int i;
+    for(i = 0; i<10; i++){
+        ScoreEntry temp = {"AAA", 0};
+        highscores[i] = temp;
+    }
 
+}
+
+void gameInit(){
     //Intialize parameters
     running = TRUE;
-    score = 0;
+    score = 10;
     won = FALSE;
     level = 1;
     linesremaining = 5;
@@ -871,33 +965,12 @@ int gameLoop(){
             if(sw3){
                 int *tempgame = board;
                 OledClear();
-
-                char name[4] = "AAA";
-                char pos[3] = "1";
-                char tempscore[4] = "13";
-
-                concatenate(pos, name);
-                concatenate(pos, tempscore);
-
-                text_update(0, pos);
-
-                display_text();
-
-                while(1){
-                    int close = getsw();
-                    if(!close){
-                        OledClear();
-                        updateOLED();
-                        break;
-                    }
-                }
+                printHighscore();
 
                 int loopgame;
                 for(loopgame = 0; loopgame < 128; loopgame++){
                     board[i] = tempgame[i];
                 }  
-
-
             }
         }
 
@@ -910,53 +983,144 @@ int gameLoop(){
 
 void gameEnd(){
     text_update(0, "GAME OVER, too bad :(");
-    text_update(2, "Press BTN1 to try again");
+
+    addHighscore();
+
+    text_update(2, "Press BTN2 to try again");
     display_text();
 
+    int btn = getbtns();
+
     while(1){
-        int btn = PORTF & 0x1;
-        if(btn){
+        int btn = getbtns();
+
+        if(btn & 0x1){
             break;
         }
     }
-    main();
+    quicksleep(999999);
+}
+
+void addHighscore(){
+    OledClear();
+
+    if(score <= highscores[9].score){
+        text_update(0, "Score not in top10");
+        text_update(2, "Press btn2");
+        display_text();
+        while(1){
+            int btn = getbtns();
+
+            if(btn & 0x1){
+                break;
+            }
+        }
+        return;
+    }
+
+    ScoreEntry temp = {"AAA", 0};
+    temp.score = score;
+    int letterPos = 0;
+    int alphabetPos = 0;
+    text_update(0, "Enter your name:");
+
+    text_update(1, temp.name);
+    text_update(2, "*");
+    display_text();
+
+    while(1){
+        
+        int btns = getbtns();
+        int btn4 = (btns>>2) & 0x1;
+        int btn3 = (btns>>1) & 0x1;
+        int btn2 = btns & 0x1;
+
+        if(btn4){
+            alphabetPos = modulo(alphabetPos-1, 26);
+            temp.name[letterPos] = alphabet[alphabetPos];
+        }
+
+        if(btn3){
+            alphabetPos = modulo(alphabetPos+1, 26);
+            temp.name[letterPos] = alphabet[alphabetPos];
+        }
+
+        if(btn2){
+            alphabetPos = 0;
+            letterPos++;
+            if(letterPos == 1){
+                text_update(2, " *");
+            }
+            if(letterPos == 2){
+                text_update(2, "  *");
+            }
+            if(letterPos == 3){
+                break;
+            }
+        }
+
+        text_update(1, temp.name);
+        display_text();
+        quicksleep(999945);
+    }
+    
+    highscores[9] = temp;
+    qsort(highscores, 10, sizeof(ScoreEntry), compareScores);
+
+    clearText();
+    while(1){
+            int btn = getbtns();
+
+            if(btn & 0x1){
+                break;
+            }
+    }
+    
 }
 
 void gameWin(){
     text_update(0, "YOU'RE THE BEST, WELL DONE!");
     text_update(1, "You defeated level 6");
-    text_update(3, "To play again press BTN1");
+    text_update(3, "To play again press BTN2");
     while(1){
-        int btn = PORTF & 0x1;
-        if(btn){
+        int btn = getbtns();
+
+        if(btn & 0x1){
             break;
         }
     }
-    main();
 }
 
 int main(){
+
     seed = 0;
+    startup();
     gameInit();
     seed = seed*seed;
     srand(seed);
-    current = NewRandomTetro();
-    next = NewRandomTetro();
-    writeToBoard(current);
-    updateOLED();
 
-    //Clear static board
-    int i;
-    for(i = 0; i < 128; i++){
-        staticBoard[i] = 0;
-    }
-    while(running){
-        running = gameLoop();
-    }
-    if(won){
-        gameWin();
-    }else{
-        gameEnd();
+
+    while(1){ 
+        current = NewRandomTetro();
+        next = NewRandomTetro();
+        writeToBoard(current);
+        updateOLED();
+
+        //Clear static board
+        int i;
+        for(i = 0; i < 128; i++){
+            staticBoard[i] = 0;
+        }
+
+        while(running){
+            running = gameLoop();
+        }
+        if(won){
+            gameWin();
+        }else{
+            gameEnd();
+        }
+        gameInit();
     }
 
     return 0;
