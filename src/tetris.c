@@ -306,7 +306,7 @@ int checkMino(tetromino tetro){
             if(tetro.data[i][j] == 0){
                 continue;
             }
-            uint8_t elem = board[tetro.col+(4*j)] >> (4*i+tetro.row);
+            uint8_t elem = staticBoard[tetro.col+(4*j)] >> (4*i+tetro.row);
             elem = elem & 0x0f;
 
             if((tetro.col+(4*j) >= 128 || tetro.row < 0 || tetro.row+tetro.width+i+4 >= 31)){
@@ -551,7 +551,6 @@ void writeToBoard(tetromino temp){
             }
             for(k = 0; k < temp.width; k++){
                 if(temp.data[i][j]){
-                    int cell = (int)temp.data[i][j]; 
                     board[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
                 }
             }
@@ -568,7 +567,6 @@ void writeToStaticBoard(tetromino temp){
             }
             for(k = 0; k < temp.width; k++){
                 if(temp.data[i][j]){
-                    int cell = (int)temp.data[i][j]; 
                     staticBoard[temp.col + k + (4*j)] |= temp.data[i][j] << (4*i+temp.row);
                 }
             }
@@ -801,7 +799,7 @@ int gameLoop(){
                 writeToBoard(current);
 
                 if(checkLines()){
-                    score += 1000;
+                    score += 10;
                     linesremaining--;
 
                     if(linesremaining == 0){
@@ -822,6 +820,10 @@ int gameLoop(){
                         writeToBoard(current);
                         updateOLED();
                         deleteFromBoard(current);
+                        int i;
+                        for(i = 0; i < 128; i++){
+                            board[i] = staticBoard[i];
+                        }
                         quicksleep(100000);
                     
                     if(current.col == currentcoltemp){
@@ -849,7 +851,22 @@ int gameLoop(){
                 tetromino temp = CopyMino(current);
                 temp.row += 4;
                 if(checkMino(temp)){
-                    current.row += 4;
+                    int currentrowtemp = current.row + 4;
+                    while(1){
+                            current.row += 1;
+                            writeToBoard(current);
+                            updateOLED();
+                            deleteFromBoard(current);
+                            int i;
+                            for(i = 0; i < 128; i++){
+                                board[i] = staticBoard[i];
+                            }
+                            quicksleep(100000);
+                        
+                        if(current.row == currentrowtemp){
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -857,7 +874,22 @@ int gameLoop(){
                 tetromino temp = CopyMino(current);
                 temp.row -= 4;
                 if(checkMino(temp)){
-                    current.row -= 4;
+                    int currentrowtemp = current.row - 4;
+                    while(1){
+                            current.row -= 1;
+                            writeToBoard(current);
+                            updateOLED();
+                            deleteFromBoard(current);
+                            int i;
+                            for(i = 0; i < 128; i++){
+                                board[i] = staticBoard[i];
+                            }
+                            quicksleep(100000);
+                        
+                        if(current.row == currentrowtemp){
+                            break;
+                        }
+                    }
                 }
             }
 
